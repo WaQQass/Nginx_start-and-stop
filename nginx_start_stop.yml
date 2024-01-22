@@ -1,0 +1,57 @@
+- name: Schedule Nginx Start and Stop
+  hosts: webservers
+  become: true
+  vars:
+    start_script_path: "/home/ubuntu/cron/nginx_start_stop/start_nginx.sh"
+    stop_script_path: "/home/ubuntu/cron/nginx_start_stop/stop_nginx.sh"
+
+  tasks:
+    - name: Debug - Print start_script_path and stop_script_path
+      debug:
+        var: item
+      with_items:
+        - "{{ start_script_path }}"
+        - "{{ stop_script_path }}"
+
+    - name: Copy the start script to the remote host
+      copy:
+        src: start_nginx.sh
+        dest: "{{ start_script_path }}"
+        mode: 0755
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Allow user "ubuntu" to execute the start script without entering a password
+      lineinfile:
+        dest: /etc/sudoers
+        line: "ubuntu ALL=(ALL:ALL) NOPASSWD: {{ start_script_path }}"
+
+    - name: Copy the stop script to the remote host
+      copy:
+        src: stop_nginx.sh
+        dest: "{{ stop_script_path }}"
+        mode: 0755
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Allow user "ubuntu" to execute the stop script without entering a password
+      lineinfile:
+        dest: /etc/sudoers
+        line: "ubuntu ALL=(ALL:ALL) NOPASSWD: {{ stop_script_path }}"
+
+    - name: Create cron job to start Nginx at 13:05 pm (13:05)
+      cron:
+        name: "start_nginx"
+        minute: "05"
+        hour: "13"
+        job: "{{ start_script_path }}"
+        weekday: "1-5"  # Monday to Friday (1-5)
+
+    - name: Create cron job to stop Nginx at 13:10 pm (13:10)
+      cron:
+        name: "stop_nginx"
+        minute: "10"
+        hour: "13"
+        job: "{{ stop_script_path }}"
+        weekday: "1-5"  # Monday to Friday (1-5)
+

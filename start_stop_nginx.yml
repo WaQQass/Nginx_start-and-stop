@@ -1,0 +1,37 @@
+- name: Schedule Nginx Start and Stop
+  hosts: webservers
+  become: true
+  vars:
+    script_path: "/home/ubuntu/cron/nginx_start_stop/start_stop_nginx.sh"
+
+  tasks:
+    - name: Copy the combined script to the remote host
+      copy:
+        src: start_stop_nginx.sh
+        dest: "{{ script_path }}"
+        mode: 0755
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Allow user "ubuntu" to execute the script without entering a password
+      lineinfile:
+        dest: /etc/sudoers
+        line: "ubuntu ALL=(ALL:ALL) NOPASSWD: {{ script_path }}"
+
+    - name: Create cron job to start Nginx at 5:30 PM (17:30)
+      cron:
+        name: "start_nginx"
+        minute: "55"
+        hour: "14"
+        job: "{{ script_path }}"
+        weekday: "1-5"  # Monday to Friday (1-5)
+
+    - name: Create cron job to stop Nginx at 8:30 PM (20:30)
+      cron:
+        name: "stop_nginx"
+        minute: "59"
+        hour: "14"
+        job: "{{ script_path }}"
+        weekday: "1-5"  # Monday to Friday (1-5)
+
+
